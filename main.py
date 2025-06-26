@@ -4,6 +4,21 @@ import json
 import os
 from google import genai
 
+
+################ Design ################
+def intro():
+    intro = '''
+┏┓   ┓  ┏┓     ┏┓  •       
+┃ ┏┓┏┫┏┓┗┓┏┓┏  ┣┫┏┏┓┏╋┏┓┏┓╋
+┗┛┗┛┗┻┗ ┗┛┗ ┗  ┛┗┛┛┗┛┗┗┻┛┗┗
+
+*** Note: This LLM vulnerability scanner should only be used for educational purposes ***
+*** There may be instances of false-negatives, false-positives, or under developed true-positives ***
+'''
+    return intro
+
+
+################ Functionality ################
 def argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument("filename", help = "Source-code file for vulnerability search")
@@ -23,8 +38,7 @@ def get_prompt_template():
 def build_prompt(prompt_template, source_code):
     prompt_template["source code"] = source_code
     template = json.dumps(prompt_template, indent=4)
-    prompt = f"{template}"
-    return prompt
+    return template
 
 def call_LLM(prompt):
     client = genai.Client(api_key = os.getenv("GEMINI_API_KEY"))
@@ -40,12 +54,12 @@ def clean_response(response):
 
 def print_output(clean_response):
     if clean_response == {}:
-        print("The assistant found no vulnerabilies!")
+        print("The assistant found no vulnerabilies.")
     
     else:
         i = 1
         for vulnerability_detected in clean_response:
-            print("----------------------------------------------------------------------------")
+            print("──────────────────────────────────────────────────────────────────────────────────────────────────────────────")
             print(f"Vulnerability {i}: {vulnerability_detected['vulnerability']}\n")
             print(f"OWASP Top 10 Category: {vulnerability_detected['owasp_category']}\n")
             print(f"Location: {vulnerability_detected['location']}\n")
@@ -53,10 +67,12 @@ def print_output(clean_response):
             print(f"Exploit: {vulnerability_detected['exploit']}\n")
             print(f"Remediation: {vulnerability_detected['remediation']}\n")
             print(f"References for Self-Study: {vulnerability_detected['references']}\n")
-            print("----------------------------------------------------------------------------")
+            print("──────────────────────────────────────────────────────────────────────────────────────────────────────────────")
             i += 1
 
+################ Main ################
 def main():
+    print(intro())
     filename = argparser()
     source_code = get_user_source_code(filename)
     prompt_template = get_prompt_template()
