@@ -2,7 +2,7 @@
 *Welcome to my SU25 Intro to Software Engineering project!* The goal for this project is to create a vulnerability assessment assistant tool to evaluate a user's source code for commonly exploited software vulnerabilities.
 
 ## Details
-- Linux-based CLI tool
+- Python CLI and GUI tool
 
 ## Requirements
 
@@ -14,5 +14,5 @@
 >    - Generate and copy API key in Google AI Studio
 >    - Place API in env variables `export GEMINI_API_KEY={your-api-key}`
 
-## Initial CLI Tool Setup
-First, you will need to install google-genai `pip install google-genai`
+## Initial Tool Setup
+First, you will need to install all required python dependencies `pip install -r requirements.txt`
