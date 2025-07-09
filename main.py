@@ -1,4 +1,3 @@
-# Receive User Input Source Code 
 import argparse
 import json
 import os
@@ -35,7 +34,16 @@ class QueryLLM:
         self.prompt = prompt
         self.response = None
         self.cleaned_response = None
+        
         self.response_fields = []
+        self.vulnerability = None
+        self.owasp_category = None
+        self.location = None
+        self.description = None
+        self.exploit = None
+        self.remediation = None
+        self.references = None
+        self.completed_response = ""
 
     def call_LLM(self):
         client = genai.Client(api_key = os.getenv("GEMINI_API_KEY"))
@@ -53,7 +61,7 @@ class QueryLLM:
             print("The assistant found no vulnerabilies.")
         
         else:
-            i = 1
+            i = 1 # just for assigning an order id to each vulnerability
             for vulnerability_detected in self.cleaned_response:
                 print("──────────────────────────────────────────────────────────────────────────────────────────────────────────────")
                 print(f"Vulnerability {i}: {vulnerability_detected['vulnerability']}\n")
@@ -66,10 +74,37 @@ class QueryLLM:
                 print("──────────────────────────────────────────────────────────────────────────────────────────────────────────────")
                 i += 1
 
-    def query(self):
+    def get_output(self):
+        if self.cleaned_response == {}:
+            return "The assistant found no vulnerabilies."
+        
+        else:
+            i = 1 # just for assigning an order id to each vulnerability
+            for vulnerability_detected in self.cleaned_response:
+                vulnerability_n = []
+                self.vulnerability = f"Vulnerability {i}: {vulnerability_detected['vulnerability']}\n"
+                self.owasp_category = f"OWASP Top 10 Category: {vulnerability_detected['owasp_category']}\n"
+                self.location = f"Location: {vulnerability_detected['location']}\n"
+                self.description = f"Description: {vulnerability_detected['description']}\n"
+                self.exploit = f"Exploit: {vulnerability_detected['exploit']}\n"
+                self.remediation = f"Remediation: {vulnerability_detected['remediation']}\n"
+                self.references = f"References for Self-Study: {vulnerability_detected['references']}\n"
+                self.completed_response = f"{self.vulnerability}{self.owasp_category}{self.location}{self.description}{self.exploit}{self.remediation}{self.references}"
+                self.response_fields.append(self.completed_response)
+                i += 1
+        return self.response_fields
+
+    def query_CLI(self):
         self.call_LLM()
         self.clean_response()
         self.print_output()
+
+    def query_GUI(self):
+        self.call_LLM()
+        self.clean_response()
+        return self.get_output()
+
+
 
 class CodeSecAssistant:
     def __init__(self):
@@ -93,14 +128,16 @@ class CodeSecAssistant:
         crafter = PromptCrafter(args.filename)
         prompt = crafter.craft()
         querier = QueryLLM(prompt)
-        querier.query()
+        querier.query_CLI()
 
-################ Main ################
-def main():
-    app = CodeSecAssistant()
-    app.run_CLI()
-
-  
+    def run_GUI(self, file):
+        # PROMPT CRAFTER CREATES THE PROMPT FROM SOURCE CODE + TEMPLATE AND JSONIFIES IT
+        crafter = PromptCrafter(file)
+        prompt = crafter.craft()
+        querier = QueryLLM(prompt)
+        output = querier.query_GUI()        
+        return output
 
 if __name__ == "__main__":
-    main()
+    app = CodeSecAssistant()
+    app.run_CLI()

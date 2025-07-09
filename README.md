@@ -15,4 +15,13 @@
 >    - Place API in env variables `export GEMINI_API_KEY={your-api-key}`
 
 ## Initial Tool Setup
+
+>**OPTIONAL:** Create a virtual enviroment to isolate dependencies
+>    - To create the virtual enviornment - `python3 -m venv venv` 
+>    - To activate the environment - Linux: `source venv/bin/activate` | Windows: `venv\Scripts\activate`
+>    - Deactivate the environment when done using - `deactivate` *system agnostic*
+
+### Step 1:
 First, you will need to install all required python dependencies `pip install -r requirements.txt`
+- If you are using a python virtual environment activate it before you install the required dependences
+
