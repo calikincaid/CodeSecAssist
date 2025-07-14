@@ -7,7 +7,8 @@ class App(ctk.CTk):
         super().__init__()
 
         #Instance Variables
-        self.filename = None
+        self.source = None
+        self.llm_selection = None
 
         #================================================================#
         # Creates the window
@@ -15,7 +16,7 @@ class App(ctk.CTk):
         self.title("Code Security Assistant")
 
         # Creates the grid for the layout of the app
-        self.grid_columnconfigure((0), weight=0)
+        self.grid_columnconfigure(0, weight=0)
         self.grid_columnconfigure((1, 2, 3, 4, 5, 6), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3), weight=1)
         #================================================================#
@@ -26,21 +27,18 @@ class App(ctk.CTk):
         self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(4, weight=1)
         self.logo_label = ctk.CTkLabel(self.sidebar_frame, 
-                                       text='''
-┏┓   ┓  ┏┓       
-┃ ┏┓┏┫┏┓┗┓┏┓┏
-┗┛┗┛┗┻┗ ┗┛┗ ┗
-┏┓  •
-┣┫┏┏┓┏╋┏┓┏┓╋
-┛┗┛┛┗┛┗┗┻┛┗┗    
-''', 
+                                       text=f"CodeSec\nAssistant", 
                                        justify="left",
-                                       font=ctk.CTkFont(family="Courier New", size=18, weight="bold"))
+                                       font=ctk.CTkFont(family="Courier New", size=36, weight="bold"))
         self.logo_label.grid(row=0, column=0, padx=5, pady=(10, 5))
         
         # Creates the tutorial button within the sidebar frame
-        self.sidebar_button_1 = ctk.CTkButton(self.sidebar_frame, command=self.sidebar_button_event, text="Tutorial")
-        self.sidebar_button_1.grid(row=1, column=0, padx=5, pady=10)
+        self.tutorial_button = ctk.CTkButton(self.sidebar_frame, command=self.sidebar_button_event, text="Tutorial")
+        self.tutorial_button.grid(row=1, column=0, padx=5, pady=10)
+
+        # Creates the api_key button
+        self.api_key_button = ctk.CTkButton(self.sidebar_frame, command=self.api_key_event, text="API Key")
+        self.api_key_button.grid(row=2, column=0, padx=5, pady=10)       
         
         # Creates the appearance option menu within the sidebar frame
         self.appearance_mode_label = ctk.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
@@ -63,7 +61,7 @@ class App(ctk.CTk):
         #================================================================#
         # Create source_code frame with entry and buttons
         self.source_code_frame = ctk.CTkFrame(self, width=100)
-        self.source_code_frame.grid(row=3, column=1, columnspan=4, padx=(20, 20), pady=(20, 20), sticky="new")
+        self.source_code_frame.grid(row=3, column=1, columnspan=4, padx=(20, 20), pady=(20, 20), sticky="nsew")
         self.source_code_frame.grid_columnconfigure(0, weight=6)
         self.source_code_frame.grid_columnconfigure(1, weight=1)
         self.source_code_frame.grid_columnconfigure(2, weight=1)
@@ -72,24 +70,21 @@ class App(ctk.CTk):
                                        text="Upload Source Code",
                                        justify="left",
                                        font=ctk.CTkFont(family="Courier New", size=18, weight="bold"))
-        self.source_label.grid(row=0, column=0, padx=(5, 5), pady=(5, 5), sticky="w")
+        self.source_label.grid(row=0, column=0, sticky="w")
 
         # Creates the browse button for selecting source code file
         self.browse_button = ctk.CTkButton(self.source_code_frame, 
                                     command = self.open_file_dialog, 
                                     text = "Browse", 
-                                    hover_color = "darkgray", 
-                                    fg_color ="gray",
-                                    border_width=2,
                                     text_color = "white"
                                     )
         self.browse_button.grid(row=3, column=2, padx=20, pady=20, sticky="nsew")
 
         # create main entry and button
         self.entry = ctk.CTkEntry(self.source_code_frame, width=500, placeholder_text="Enter source code here or browse for file.")
-        self.entry.grid(row=3, column=0, padx=(20, 20), pady=(20, 20), sticky="nsew")
+        self.entry.grid(row=3, column=0, padx=(20, 20), pady=(20, 20), sticky="new")
 
-        self.submit_button = ctk.CTkButton(self.source_code_frame, text="Submit", fg_color="gray", border_width=2, hover_color="darkgray", text_color=("white", "white"))
+        self.submit_button = ctk.CTkButton(self.source_code_frame, text="Submit", text_color=("white", "white"), command=self.source_submit_button_event)
         self.submit_button.grid(row=3, column=1, padx=(20, 20), pady=(20, 20), sticky="nsew")
         #================================================================#
 
@@ -97,30 +92,75 @@ class App(ctk.CTk):
         # Create the Start Analysis button
         self.analyse_button = ctk.CTkButton(self, 
                                     command = self.analyze_button_event, 
-                                    text = f"START\nANALYSIS", 
-                                    hover_color = "darkgray", 
-                                    fg_color ="gray",
-                                    border_width=2,
+                                    text = f"Start\nAnalysis", 
                                     text_color = "white"
                                     )
         self.analyse_button.grid(row=3, column=5, padx=20, pady=20, sticky="nsew")
         #================================================================#
 
         #================================================================#
-        # Create setttings frame with tabs and options
-        self.settings_frame = ctk.CTkFrame(self, width=100)
+        # Create settings frame with tabs and options
+        self.settings_frame = ctk.CTkFrame(self, width=100, corner_radius=20)
         self.settings_frame.grid(row=0, column=7, rowspan=4, padx=20, pady=20, sticky="nsew")
-        self.settings_frame.grid_rowconfigure((0, 1, 2), weight=1)
-        self.logo_label = ctk.CTkLabel(self.settings_frame, 
+        self.settings_frame.grid_rowconfigure((0, 1, 2, 3, 4, 5, 6, 7), weight=1)
+
+        self.source_label = ctk.CTkLabel(self.settings_frame, 
                                        text="Settings",
                                        justify="center",
                                        font=ctk.CTkFont(family="Courier New", size=18, weight="bold"))
-        self.logo_label.grid(row=0, column=7, sticky="n")
+        self.source_label.grid(row=0, column=7, sticky="nsew")
+        
+        # Creates the export to pdf frame and switch within the settings frame
+        self.switch_frame = ctk.CTkFrame(self.settings_frame, width=100)
+        self.switch_frame.grid(row=1, column=7, padx=20, pady=20, sticky="nsew")
+        self.switch_frame.grid_rowconfigure((0,1), weight=1)
+        self.switch_frame.grid_columnconfigure(0, weight=1)
+
+        self.output_label = ctk.CTkLabel(self.switch_frame, 
+                                       text="Output .pdf", 
+                                       justify="center",
+                                      )
+        self.output_label.grid(row=0, column=0, padx=5, pady=5, sticky="nsew")
+
+        self.output_switch = ctk.CTkSwitch(self.switch_frame, text="off | on", command=self.sidebar_button_event, variable=ctk.StringVar(value="off"), onvalue="on", offvalue="off", state="disabled")
+        self.output_switch.grid(row=1, column=0, padx=5, pady=5)
+
+        # Creates the LLM selection frame and dropdown within the settings frame
+        self.llm_frame = ctk.CTkFrame(self.settings_frame, width=100)
+        self.llm_frame.grid(row=7, column=7, padx=20, pady=20, sticky="nsew")
+        #self.llm_frame.grid_rowconfigure((0,1), weight=1)
+        #self.llm_frame.grid_columnconfigure(0, weight=1)
+        
+        # Creates the llm model option menu within the settings frame       
+        self.llm_label = ctk.CTkLabel(self.llm_frame, text="LLM Model", anchor="w")
+        self.llm_label.grid(row=0, column=0, padx=5, pady=5)
+        self.llm_option_menu = ctk.CTkOptionMenu(self.llm_frame, values=["Gemini", "ChatGPT", "Claude"], command=self.llm_option_menu_event, state="enabled") 
+        self.llm_option_menu.grid(row=1, column=0, padx=5, pady=5)
+
+        # Creates the source code option menu within the settings frame       
+        self.code_label = ctk.CTkLabel(self.llm_frame, text="Source Code", anchor="w")
+        self.code_label.grid(row=2, column=0, padx=5, pady=5)
+        self.code_option_menu = ctk.CTkOptionMenu(self.llm_frame, values=["Python", "Java", "C++"], command=self.code_option_menu_event, state="disabled") 
+        self.code_option_menu.grid(row=3, column=0, padx=5, pady=5)
+
+        # Creates the prompt template  option menu within the settings frame       
+        self.prompt_label = ctk.CTkLabel(self.llm_frame, text="Prompt Template", anchor="w")
+        self.prompt_label.grid(row=4, column=0, padx=5, pady=5)
+        self.prompt_option_menu = ctk.CTkOptionMenu(self.llm_frame, values=["Detect Owasp Vulns", "PROMPT_OPTION", "PROMPT_OPTION"], command=self.prompt_option_menu_event, state="disabled") 
+        self.prompt_option_menu.grid(row=5, column=0, padx=5, pady=5)
+
+        # Creates the output language option menu within the settings frame       
+        self.language_label = ctk.CTkLabel(self.llm_frame, text="Output Language", anchor="w")
+        self.language_label.grid(row=6, column=0, padx=5, pady=5)
+        self.language_option_menu = ctk.CTkOptionMenu(self.llm_frame, values=["English", "Español", "Deutsch"], command=self.language_option_menu_event, state="disabled") 
+        self.language_option_menu.grid(row=7, column=0, padx=5, pady=5)
         #================================================================#
 
+  
+    ###################### BUTTON ACTIONS ######################
     def open_file_dialog(self):
-        self.filename = ctk.filedialog.askopenfilename( filetypes = [("All files", "*.*")])
-        print("Selected file:", self.filename)
+        self.source = ctk.filedialog.askopenfilename( filetypes = [("All files", "*.*")])
+        print("Selected file:", self.source)
         
     def change_appearance_mode_event(self, new_appearance_mode: str):
         ctk.set_appearance_mode(new_appearance_mode)
@@ -135,15 +175,39 @@ class App(ctk.CTk):
     def analyze_button_event(self):
         self.response_textbox.delete("1.0", "end")
         assistant = CodeSecAssistant()
-        response = assistant.run_GUI(self.filename) # needs error handling for if filename hasnt been populated yet 
+        response = assistant.run_GUI(self.source, self.llm_selection) # needs error handling for if source hasnt been populated yet 
         self.response_textbox.configure(state="normal")
 
-        for item in response:
-            self.response_textbox.insert("end", f"{item}\n")
+        for vulnerability in response:
+            self.response_textbox.insert("end", f"{vulnerability}\n")
 
+    def source_submit_button_event(self):
+        self.source = self.entry.get()
+        self.entry.delete(0, "end")
+        print("Submitted source code.")
+
+    def llm_option_menu_event(self, choice):
+        self.llm_selection = choice
+        print(f"Configured LLM selection: {choice}")
+        pass
+
+    def code_option_menu_event(self):
+        pass
+    
+    def prompt_option_menu_event(self):
+        pass
+
+    def language_option_menu_event(self):
+        pass
+    
+    def api_key_event(self):
+        pass
 
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+
+
+
 
 

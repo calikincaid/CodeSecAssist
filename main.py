@@ -2,11 +2,12 @@ import argparse
 import json
 import os
 from google import genai
+from openai import OpenAI
 
 
 class PromptCrafter:
-    def __init__(self, source_path):
-        self.path = source_path
+    def __init__(self, file_or_code):
+        self.source = file_or_code
         self.template = "prompt_template.json"
         self.source_code = None
         self.prompt = None
@@ -15,9 +16,12 @@ class PromptCrafter:
         with open(self.template) as file:
             self.prompt = json.load(file)["detect_owasp_vulns"]
 
-    def set_user_source_code(self):
-        with open(self.path) as file:
+    def read_user_source_code(self):
+        with open(self.source, encoding="utf-8") as file:
             self.source_code = file.read() 
+
+    def set_user_source_code(self):
+        self.source_code = self.source
 
     def build_prompt(self):
         self.prompt["source code"] = self.source_code
@@ -25,16 +29,24 @@ class PromptCrafter:
 
     def craft(self):
         self.get_prompt_template()
-        self.set_user_source_code()
+       
+        # Ensures functionality whether the PromptCrafter file_or_code is a file or raw source code
+        isFile = os.path.isfile(self.source)
+        if isFile:
+            self.read_user_source_code()
+        else:
+            self.set_user_source_code()
+
+        # Builds unique prompt from the prompt_template.json and the input file_or_code
         self.build_prompt()
         return self.prompt
 
 class QueryLLM:
-    def __init__(self, prompt):
+    def __init__(self, prompt, llm_selection):
+        self.llm_selection = llm_selection
         self.prompt = prompt
         self.response = None
         self.cleaned_response = None
-        
         self.response_fields = []
         self.vulnerability = None
         self.owasp_category = None
@@ -46,9 +58,17 @@ class QueryLLM:
         self.completed_response = ""
 
     def call_LLM(self):
-        client = genai.Client(api_key = os.getenv("GEMINI_API_KEY"))
-        reply = client.models.generate_content( model = "gemini-2.0-flash", contents = self.prompt)
-        self.response = reply.text
+        
+        match self.llm_selection:
+            case "Gemini":
+                client = genai.Client(api_key=os.getenv("ASSIST_API_KEY"))
+                reply = client.models.generate_content(model="gemini-2.0-flash", contents=self.prompt)
+                self.response = reply.text
+            case "ChatGPT":
+                client = OpenAI(api_key=os.getenv("ASSIST_API_KEY"))
+                reply = client.responses.create(model="gpt-4o", input=self.prompt)
+                self.response = reply.output_text
+
 
     def clean_response(self):
         response_lines = self.response.splitlines()
@@ -82,13 +102,13 @@ class QueryLLM:
             i = 1 # just for assigning an order id to each vulnerability
             for vulnerability_detected in self.cleaned_response:
                 vulnerability_n = []
-                self.vulnerability = f"Vulnerability {i}: {vulnerability_detected['vulnerability']}\n"
-                self.owasp_category = f"OWASP Top 10 Category: {vulnerability_detected['owasp_category']}\n"
-                self.location = f"Location: {vulnerability_detected['location']}\n"
-                self.description = f"Description: {vulnerability_detected['description']}\n"
-                self.exploit = f"Exploit: {vulnerability_detected['exploit']}\n"
-                self.remediation = f"Remediation: {vulnerability_detected['remediation']}\n"
-                self.references = f"References for Self-Study: {vulnerability_detected['references']}\n"
+                self.vulnerability = f"Vulnerability {i}:\n{vulnerability_detected['vulnerability']}\n\n"
+                self.owasp_category = f"OWASP Top 10 Category:\n{vulnerability_detected['owasp_category']}\n\n"
+                self.location = f"Location:\n{vulnerability_detected['location']}\n\n"
+                self.description = f"Description:\n{vulnerability_detected['description']}\n\n"
+                self.exploit = f"Exploit:\n{vulnerability_detected['exploit']}\n\n"
+                self.remediation = f"Remediation:\n{vulnerability_detected['remediation']}\n\n"
+                self.references = f"References for Self-Study:\n{vulnerability_detected['references']}\n\n"
                 self.completed_response = f"{self.vulnerability}{self.owasp_category}{self.location}{self.description}{self.exploit}{self.remediation}{self.references}"
                 self.response_fields.append(self.completed_response)
                 i += 1
@@ -103,8 +123,6 @@ class QueryLLM:
         self.call_LLM()
         self.clean_response()
         return self.get_output()
-
-
 
 class CodeSecAssistant:
     def __init__(self):
@@ -130,11 +148,11 @@ class CodeSecAssistant:
         querier = QueryLLM(prompt)
         querier.query_CLI()
 
-    def run_GUI(self, file):
+    def run_GUI(self, file_or_source, llm_selection):
         # PROMPT CRAFTER CREATES THE PROMPT FROM SOURCE CODE + TEMPLATE AND JSONIFIES IT
-        crafter = PromptCrafter(file)
+        crafter = PromptCrafter(file_or_source)
         prompt = crafter.craft()
-        querier = QueryLLM(prompt)
+        querier = QueryLLM(prompt, llm_selection)
         output = querier.query_GUI()        
         return output
 
