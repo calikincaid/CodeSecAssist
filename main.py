@@ -4,7 +4,6 @@ import os
 from google import genai
 from openai import OpenAI
 
-
 class PromptCrafter:
     def __init__(self, file_or_code):
         self.source = file_or_code
@@ -13,17 +12,23 @@ class PromptCrafter:
         self.prompt = None
 
     def get_prompt_template(self):
-        with open(self.template) as file:
-            self.prompt = json.load(file)["detect_owasp_vulns"]
+        try:
+            with open(self.template) as file:
+                self.prompt = json.load(file)["detect_owasp_vulns"] # loads JSON template into python dict
+        except FileNotFoundError:
+            print(f"Prompt template file {self.template} is not available. Ensure template exists and please try again.")
 
-    def read_user_source_code(self):
-        with open(self.source, encoding="utf-8") as file:
-            self.source_code = file.read() 
-
-    def set_user_source_code(self):
+    def read_user_source_code(self): # this function is used when user passes a file path to source
+        try:
+            with open(self.source, encoding="utf-8") as file:
+                self.source_code = file.read() 
+        except FileNotFoundError:
+            print(f"Source code path {self.source_code} is not available. Please try again with a valid filepath.")
+    
+    def set_user_source_code(self): # this function is used when user passes raw source code
         self.source_code = self.source
 
-    def build_prompt(self):
+    def build_prompt(self): # adds the source code to the template dict, then creates unique JSON template
         self.prompt["source code"] = self.source_code
         self.prompt = json.dumps(self.prompt, indent=4)
 
@@ -58,7 +63,6 @@ class QueryLLM:
         self.completed_response = ""
 
     def call_LLM(self):
-        
         match self.llm_selection:
             case "Gemini":
                 client = genai.Client(api_key=os.getenv("ASSIST_API_KEY"))
@@ -69,10 +73,9 @@ class QueryLLM:
                 reply = client.responses.create(model="gpt-4o", input=self.prompt)
                 self.response = reply.output_text
 
-
     def clean_response(self):
         response_lines = self.response.splitlines()
-        response_lines = response_lines[1:-1]
+        response_lines = response_lines[1:-1] # removes non json header and footer from response
         json_only_response = "\n".join(response_lines)
         self.cleaned_response = json.loads(json_only_response) 
     
@@ -134,18 +137,19 @@ class CodeSecAssistant:
 *** Note: This LLM vulnerability scanner should only be used for educational purposes ***
 *** There may be instances of false-negatives, false-positives, or under developed true-positives ***
 '''
+
     def run_CLI(self):
         # ARG PARSER TAKES COMMAND LINE ARGUMENT FOR SOURCECODE FILENAME
         parser = argparse.ArgumentParser()
         parser.add_argument("filename", help = "Source-code file for vulnerability search")
+        parser.add_argument("-l", "--llm", help = "LLM type (e.g., \"Gemini\", \"ChatGPT\")")
         args = parser.parse_args()
-
         print(self.intro)
 
         # PROMPT CRAFTER CREATES THE PROMPT FROM SOURCE CODE + TEMPLATE AND JSONIFIES IT
         crafter = PromptCrafter(args.filename)
         prompt = crafter.craft()
-        querier = QueryLLM(prompt)
+        querier = QueryLLM(prompt, args.llm)
         querier.query_CLI()
 
     def run_GUI(self, file_or_source, llm_selection):

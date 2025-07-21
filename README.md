@@ -12,7 +12,12 @@
 >**Gemini**
 >    - Create Google AI Studio account 
 >    - Generate and copy API key in Google AI Studio
->    - Place API in env variables `export GEMINI_API_KEY={your-api-key}`
+>    - Set env - Linux: `export ASSIST_API_KEY={your-api-key}` | Windows: `$env:ASSIST_API_KEY="{your-api-key}"`
+
+>**OpenAI**
+>    - Create OpenAI account 
+>    - Generate and copy API key in OpenAI dashboard
+>    - Set env - Linux: `export ASSIST_API_KEY={your-api-key}` | Windows: `$env:ASSIST_API_KEY="{your-api-key}"`
 
 ## Initial Tool Setup
 
@@ -23,5 +28,18 @@
 
 ### Step 1:
 First, you will need to install all required python dependencies `pip install -r requirements.txt`
-- If you are using a python virtual environment activate it before you install the required dependences
+- If you are using a python virtual environment, activate it before you install the required dependences
 
+### Step 2:
+#### GUI Version
+1. Run `python app.py` to open the GUI version of the app
+2. Either:
+    - Copy and paste source code into entry box labeled "Upload Source Code", then click "Submit" button
+    - Click "Browse" button, and select file through GUI file explorer popout
+3. Select "LLM Model" from drop down options in settings
+4. Configure other desired settings from settings panel
+5. Click "Start Analysis" button to generate response
+
+#### CLI Version
+Run `python main.py [-l LLM] filename`
+- `-l LLM` option is not required. defaults to Gemini
