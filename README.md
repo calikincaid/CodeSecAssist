@@ -1,8 +1,13 @@
 # CS3300 Intro To SWE Semester Project
+<p align="center">
+  <img src="https://img.shields.io/badge/Language-Python%203.9%2B-blue?style=for-the-badge&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Licence-MIT-green?style=for-the-badge"/>
+</p>
+
 *Welcome to my SU25 Intro to Software Engineering project!* The goal for this project is to create a vulnerability assessment assistant tool to evaluate a user's source code for commonly exploited software vulnerabilities.
 
 ## Details
-- Python CLI and GUI tool
+CodeSecAssistant is a vulnerability scanner that focuses on identifying security vulnerabilities in user-submitted code snippets or user-selected source code files. In the future, the option to parse full codebases will also be implemented. CodeSecAssistant utilizes LLM API services for security vulnerability detection based on prompts in a template file that tailors the LLM analysis to focus on the selected prompt's instructions. It is not intended to be a replacement for professional code analysis and shouldn't be deployed in professional settings or be used on proprietary code bases. CodeSecAssistant includes a GUI option and a rudimentary CLI option to support scripting capability.
 
 ## Requirements
 
