@@ -23,7 +23,7 @@ class PromptCrafter:
             with open(self.source, encoding="utf-8") as file:
                 self.source_code = file.read() 
         except FileNotFoundError:
-            print(f"Source code path {self.source_code} is not available. Please try again with a valid filepath.")
+            print(f"Source code path {self.source} is not available. Please try again with a valid filepath.")
     
     def set_user_source_code(self): # this function is used when user passes raw source code
         self.source_code = self.source
@@ -72,6 +72,10 @@ class QueryLLM:
                 client = OpenAI(api_key=os.getenv("ASSIST_API_KEY"))
                 reply = client.responses.create(model="gpt-4o", input=self.prompt)
                 self.response = reply.output_text
+            case _: #defaults to gemini if no llm_selection is provided
+                client = genai.Client(api_key=os.getenv("ASSIST_API_KEY"))
+                reply = client.models.generate_content(model="gemini-2.0-flash", contents=self.prompt)
+                self.response = reply.text
 
     def clean_response(self):
         response_lines = self.response.splitlines()

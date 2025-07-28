@@ -26,12 +26,11 @@
 >    - To activate the environment - Linux: `source venv/bin/activate` | Windows: `venv\Scripts\activate`
 >    - Deactivate the environment when done using - `deactivate` *system agnostic*
 
-### Step 1:
-First, you will need to install all required python dependencies `pip install -r requirements.txt`
+You will need to install all required python dependencies `pip install -r requirements.txt`
 - If you are using a python virtual environment, activate it before you install the required dependences
 
-### Step 2:
-#### GUI Version
+## Usage
+### GUI Version
 1. Run `python app.py` to open the GUI version of the app
 2. Either:
     - Copy and paste source code into entry box labeled "Upload Source Code", then click "Submit" button
@@ -40,6 +39,11 @@ First, you will need to install all required python dependencies `pip install -r
 4. Configure other desired settings from settings panel
 5. Click "Start Analysis" button to generate response
 
-#### CLI Version
-Run `python main.py [-l LLM] filename`
+### CLI Version
+Run `python main.py [-l LLM] [filename]`
 - `-l LLM` option is not required. defaults to Gemini
+
+## Disclaimer
+- This LLM vulnerability scanner should only be ethically used for educational purposes and not be used in professional settings or with propiertary codebases.
+- There may be instances of false-negatives, false-positives, under developed true-positive, or other erroneous outputs.
+- API usage cost is dependent on the LLM service and specific model chosen.
